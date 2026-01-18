@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dentro | Master Code</title>
-    <!-- Inter Font for professional UI -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 </head>
 <body>
 
@@ -20,23 +17,15 @@
         <section id="welcome-screen" class="screen active">
             <div class="card login-card">
                 
-                <!-- TOP CONTROLS -->
-                <div class="card-controls">
-                    <!-- Resume Pill (Hidden by default) -->
-                    <button id="resume-btn" class="pill-badge hidden" title="Resume previous game">
-                        <span>▶ Resume</span>
-                    </button>
-                    <!-- Theme Toggle -->
-                    <button class="theme-toggle" title="Toggle Dark Mode">🌙</button>
-                </div>
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" title="Toggle Dark Mode">🌙</button>
 
                 <div class="card-header">
-                    <div class="icon-box">🌱</div>
+                    <div class="icon-box">🌳</div> <!-- Updated to Tree -->
                     <h1>Dentro</h1>
                     <p>Grow knowledge as a tree</p>
                 </div>
 
-                <!-- Settings Form -->
                 <div class="form-group">
                     <label>Language</label>
                     <div class="select-wrapper">
@@ -78,11 +67,20 @@
         <!-- === SCREEN 2: GAME === -->
         <section id="game-screen" class="screen">
             <header class="top-nav">
-                <button id="quit-btn" class="nav-btn" title="Save & Quit">✕</button>
+                <!-- NEW: Left side container with Button + BRANDING -->
+                <div class="nav-left">
+                    <button id="quit-btn" class="nav-btn" title="Quit Game">✕</button>
+                    <div class="app-brand">
+                        <span class="brand-icon">🌳</span>
+                        <span class="brand-name">Dentro</span>
+                    </div>
+                </div>
+
                 <div class="badges">
                     <span id="badge-lang" class="badge">JS</span>
                     <span id="badge-diff" class="badge">Easy</span>
                 </div>
+
                 <div class="right-nav">
                     <button class="theme-toggle nav-btn" title="Toggle Dark Mode">🌙</button>
                     <button id="sound-btn" class="nav-btn active">🔊</button>
@@ -166,14 +164,13 @@
 
                 <div class="action-stack">
                     <button id="restart-btn" class="btn btn-primary btn-full">Play Again</button>
-                    <button id="clear-btn" class="btn btn-ghost btn-full">Clear Save Data</button>
+                    <button id="home-btn" class="btn btn-ghost btn-full">Back to Home</button>
                 </div>
             </div>
         </section>
 
     </div>
 
-    <!-- Logic Scripts -->
     <script src="questions.js"></script>
     <script src="script.js"></script>
 </body>

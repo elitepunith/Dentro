@@ -1,44 +1,38 @@
+/* ... [Existing :root and body styles remain the same] ... */
+
 :root {
-    /* -- LIGHT MODE (Default) -- */
+    /* -- LIGHT MODE -- */
     --bg: #F3F4F6;
     --card-bg: #FFFFFF;
     --text-main: #111827;
     --text-sub: #6B7280;
-    
     --primary: #10B981; 
     --primary-dark: #059669;
     --accent: #3B82F6;
     --danger: #EF4444;
     --black: #1F2937;
-    
     --input-bg: #FFFFFF;
     --input-border: #E5E7EB;
     --seg-bg: #F3F4F6;
-    
     --radius: 16px;
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --font-stack: 'Inter', sans-serif;
 }
 
-/* -- DARK MODE OVERRIDES -- */
 body.dark-mode {
     --bg: #111827;
     --card-bg: #1F2937;
     --text-main: #F9FAFB;
     --text-sub: #9CA3AF;
-    
     --primary: #34D399;
     --primary-dark: #6EE7B7;
-    --black: #F9FAFB; /* Invert black buttons to white */
-    
+    --black: #F9FAFB;
     --input-bg: #374151;
     --input-border: #4B5563;
     --seg-bg: #374151;
-    
     --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
 }
 
-/* Reset & Base */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -53,28 +47,21 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Decoration */
 .background-mesh {
-    position: absolute;
-    width: 100%; height: 100%;
+    position: absolute; width: 100%; height: 100%;
     background-image: radial-gradient(rgba(156, 163, 175, 0.3) 1px, transparent 1px);
-    background-size: 20px 20px;
-    z-index: -1;
+    background-size: 20px 20px; z-index: -1;
 }
 
-/* App Wrapper */
 .app-wrapper {
     width: 100%; max-width: 1000px; height: 100%; max-height: 900px;
     position: relative; padding: 20px;
 }
 
-/* Screen Management */
 .screen {
     position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.3s ease; padding: 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease; padding: 20px;
 }
 .screen.active { opacity: 1; pointer-events: all; z-index: 10; }
 .hidden { display: none !important; }
@@ -84,9 +71,16 @@ body {
     background: var(--card-bg); border-radius: var(--radius);
     box-shadow: var(--shadow); padding: 2rem;
     width: 100%; max-width: 420px; border: 1px solid var(--input-border);
-    transition: background-color 0.3s;
-    position: relative;
+    transition: background-color 0.3s; position: relative;
 }
+
+/* Theme Toggle */
+.theme-toggle {
+    position: absolute; top: 20px; right: 20px;
+    background: transparent; border: none; font-size: 1.4rem;
+    cursor: pointer; transition: transform 0.2s; line-height: 1;
+}
+.theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
 
 /* Buttons */
 .btn {
@@ -99,36 +93,10 @@ body {
 .btn-full { width: 100%; padding: 14px; }
 .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
 .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-
 .btn-black { background: var(--black); color: var(--card-bg); }
 .btn-black:hover { opacity: 0.9; }
-
 .btn-ghost { background: transparent; color: var(--text-sub); }
 .btn-ghost:hover { background: var(--seg-bg); color: var(--text-main); }
-
-/* Theme Toggle */
-.theme-toggle {
-    background: transparent; border: none; font-size: 1.4rem;
-    cursor: pointer; transition: transform 0.2s; line-height: 1;
-}
-.theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
-
-/* NEW: Card Controls (Top Bar) */
-.card-controls {
-    display: flex; justify-content: flex-end; align-items: center;
-    gap: 10px; margin-bottom: 10px; height: 30px;
-}
-
-/* NEW: Pill Badge for Resume */
-.pill-badge {
-    background: var(--primary); color: white; border: none;
-    border-radius: 20px; padding: 5px 12px; font-size: 0.8rem;
-    font-weight: 700; cursor: pointer; font-family: var(--font-stack);
-    display: flex; align-items: center; gap: 5px;
-    transition: transform 0.2s, background-color 0.2s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.pill-badge:hover { background: var(--primary-dark); transform: translateY(-1px); }
 
 /* Form Elements */
 .form-group { margin-bottom: 1.5rem; }
@@ -170,6 +138,14 @@ select {
 
 /* === GAME SCREEN === */
 .top-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+
+/* NEW: Navigation Left Side (Logo + Quit) */
+.nav-left { display: flex; align-items: center; gap: 12px; }
+
+.app-brand { display: flex; align-items: center; gap: 8px; }
+.brand-icon { font-size: 1.5rem; }
+.brand-name { font-weight: 800; font-size: 1.1rem; color: var(--text-main); letter-spacing: -0.5px; }
+
 .right-nav { display: flex; gap: 10px; align-items: center; }
 .nav-btn {
     width: 40px; height: 40px; border-radius: 50%; border: none;
@@ -177,14 +153,12 @@ select {
     cursor: pointer; color: var(--text-sub); display: flex; justify-content: center; align-items: center;
 }
 .nav-btn.active { color: var(--primary); background: var(--card-bg); border: 2px solid var(--primary); }
+.right-nav .theme-toggle { position: static; font-size: 1.2rem; }
 
 .badges { display: flex; gap: 8px; }
 .badge { background: var(--card-bg); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; box-shadow: var(--shadow); }
 
-.game-grid {
-    display: grid; grid-template-columns: 350px 1fr; gap: 20px;
-    width: 100%; height: 100%; align-items: start;
-}
+.game-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; width: 100%; height: 100%; align-items: start; }
 
 /* Garden Card */
 .garden-card {
@@ -202,7 +176,6 @@ select {
     border-radius: 12px; margin-bottom: 1rem; position: relative;
     display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
 }
-/* Dark Mode Viewport Fix */
 body.dark-mode .viewport { background: linear-gradient(to bottom, #1E293B, #111827); border: 1px solid #374151; }
 
 .emoji-plant { font-size: 5rem; z-index: 2; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); margin-bottom: 10px; }
@@ -224,7 +197,6 @@ body.dark-mode .viewport { background: linear-gradient(to bottom, #1E293B, #1118
 .question-body { flex: 1; }
 #q-text { font-size: 1.3rem; line-height: 1.4; margin-bottom: 2rem; color: var(--text-main); }
 
-/* Syntax Highlighting */
 code {
     background: var(--seg-bg); color: #EC4899; padding: 3px 6px;
     border-radius: 6px; font-family: 'Courier New', monospace;
@@ -238,7 +210,6 @@ code {
     font-weight: 500; cursor: pointer; transition: 0.1s; color: var(--text-main);
     font-family: var(--font-stack); font-size: 1rem; display: flex; align-items: center;
 }
-
 .opt-btn:hover { border-color: var(--primary); background: var(--seg-bg); }
 .opt-btn.correct { background: rgba(16, 185, 129, 0.15); border-color: var(--primary); color: var(--primary-dark); }
 .opt-btn.wrong { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); color: var(--danger); }
@@ -269,4 +240,6 @@ code {
     .garden-card { min-height: 250px; padding: 1rem; }
     .quiz-card { padding: 1.5rem; }
     #q-text { font-size: 1.1rem; }
+    /* Hide the text "Dentro" on very small screens to save space */
+    .brand-name { display: none; }
 }

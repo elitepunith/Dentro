@@ -1,6 +1,5 @@
-/* DENTRO LOGIC - FINAL */
+/* DENTRO LOGIC - FINAL FIXED VERSION */
 
-const STORAGE_KEY = 'dentro_v4_save';
 let AUDIO = null;
 
 // --- STATE ---
@@ -27,26 +26,20 @@ function sfx(type) {
     osc.connect(gain); gain.connect(AUDIO.destination);
 
     if (type === 'pop') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, t);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
         osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
-        gain.gain.setValueAtTime(0.1, t);
-        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+        gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
         osc.start(t); osc.stop(t + 0.15);
     } 
     else if (type === 'click') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(1200, t);
-        gain.gain.setValueAtTime(0.05, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(1200, t);
+        gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
         osc.start(t); osc.stop(t + 0.03);
     }
     else if (type === 'err') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(150, t);
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(150, t);
         osc.frequency.linearRampToValueAtTime(50, t + 0.2);
-        gain.gain.setValueAtTime(0.2, t);
-        gain.gain.linearRampToValueAtTime(0.01, t + 0.2);
+        gain.gain.setValueAtTime(0.2, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.2);
         osc.start(t); osc.stop(t + 0.2);
     }
     else if (type === 'win') {
@@ -64,13 +57,21 @@ function sfx(type) {
 
 // --- UTILS ---
 const $ = (id) => document.getElementById(id);
-const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
+
+// Fisher-Yates Shuffle
+function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex != 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
-    loadSave();
     bindEvents();
-    applyTheme(); 
 });
 
 function bindEvents() {
@@ -102,29 +103,18 @@ function bindEvents() {
     });
 
     // Buttons
-    $('start-btn').onclick = () => initGame(false);
-    $('resume-btn').onclick = () => initGame(true);
+    $('start-btn').onclick = startNewGame;
     $('next-btn').onclick = nextLevel;
     $('hint-btn').onclick = showHint;
-    $('quit-btn').onclick = saveAndExit;
+    $('quit-btn').onclick = quitGame;
     $('sound-btn').onclick = toggleMute;
-    $('restart-btn').onclick = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };
-    $('clear-btn').onclick = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };
+    $('restart-btn').onclick = startNewGame;
+    $('home-btn').onclick = quitGame; 
 }
 
 // --- THEME ---
 function toggleTheme() {
     state.darkMode = !state.darkMode;
-    applyTheme();
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved) {
-        const parsed = JSON.parse(saved);
-        parsed.darkMode = state.darkMode;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-    }
-}
-
-function applyTheme() {
     if(state.darkMode) {
         document.body.classList.add('dark-mode');
         document.querySelectorAll('.theme-toggle').forEach(b => b.innerText = '☀️');
@@ -135,29 +125,26 @@ function applyTheme() {
 }
 
 // --- GAME LOGIC ---
-function initGame(isResume) {
+function startNewGame() {
     initAudio(); 
     sfx('click');
 
-    if(isResume) {
-        state = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        applyTheme();
-    } else {
-        const raw = getQuestions(state.config.lang, state.config.diff);
-        state.quiz = shuffle([...raw]); 
-        const activePlant = document.querySelector('.tile-btn.active');
-        state.config.stages = JSON.parse(activePlant.dataset.stages);
-        const currentTheme = state.darkMode;
-        state.stats = { streak: 0, health: 100, qIndex: 0, score: 0 };
-        state.darkMode = currentTheme;
-    }
+    const raw = getQuestions(state.config.lang, state.config.diff);
+    state.quiz = shuffle([...raw]); 
+    
+    const activePlant = document.querySelector('.tile-btn.active');
+    state.config.stages = JSON.parse(activePlant.dataset.stages);
+    state.stats = { streak: 0, health: 100, qIndex: 0, score: 0 };
+    state.gameOver = false;
 
     $('badge-lang').innerText = state.config.lang.toUpperCase();
     $('badge-diff').innerText = state.config.diff.toUpperCase();
     
     renderUI();
     $('welcome-screen').classList.remove('active');
+    $('result-screen').classList.remove('active');
     $('game-screen').classList.add('active');
+    
     renderQuestion();
 }
 
@@ -174,7 +161,11 @@ function renderQuestion() {
     $('next-btn').classList.add('hidden');
     $('hint-btn').classList.remove('hidden');
 
-    let optionsMap = q.opts.map(opt => ({ txt: opt, isCorrect: opt === q.a }));
+    let optionsMap = q.opts.map(opt => ({ 
+        txt: opt, 
+        isCorrect: opt === q.a 
+    }));
+    
     optionsMap = shuffle(optionsMap);
 
     optionsMap.forEach((opt, idx) => {
@@ -203,7 +194,8 @@ function checkAnswer(btn, isCorrect, q) {
     } else {
         sfx('err');
         btn.classList.add('wrong');
-        Array.from(document.querySelectorAll('.opt-btn')).find(b => b.innerText.includes(q.a)).classList.add('correct');
+        Array.from(document.querySelectorAll('.opt-btn')).find(b => b.innerHTML === q.a).classList.add('correct');
+        
         state.stats.streak = 0;
         state.stats.health -= 20;
         $('fb-icon').innerText = "⚠️";
@@ -214,8 +206,7 @@ function checkAnswer(btn, isCorrect, q) {
 
     $('fb-desc').innerHTML = q.e; 
     $('feedback-box').classList.remove('hidden');
-    renderUI();
-    saveGame();
+    renderUI(); // Updates tree based on new score
 
     if(state.stats.health <= 0) setTimeout(() => endGame(false), 1500);
     else $('next-btn').classList.remove('hidden');
@@ -223,7 +214,7 @@ function checkAnswer(btn, isCorrect, q) {
 
 function nextLevel() {
     state.stats.qIndex++;
-    if(state.stats.qIndex >= state.quiz.length) endGame(true);
+    if(state.stats.qIndex >= state.quiz.length) endGame(true); // "true" here means survived, not necessarily won
     else {
         $('plant-actor').classList.remove('wilt'); 
         sfx('click');
@@ -235,13 +226,22 @@ function nextLevel() {
 function renderUI() {
     $('disp-streak').innerText = state.stats.streak;
     $('disp-health').innerText = state.stats.health + '%';
-    const progress = (state.stats.qIndex / state.quiz.length) * 100;
-    $('progress-bar').style.width = `${progress}%`;
+    
+    // --- UPDATED LOGIC HERE ---
+    // Plant grows based on SCORE (correct answers), not just progress.
+    // If you answer wrong, tree stays small.
+    const growthPercent = (state.stats.score / state.quiz.length) * 100;
+    $('progress-bar').style.width = `${growthPercent}%`;
+    
     const stages = state.config.stages;
-    const stageIndex = Math.floor((progress/100) * (stages.length-1));
+    // Ensure we don't go out of bounds
+    const stageIndex = Math.min(
+        stages.length - 1, 
+        Math.floor((growthPercent / 100) * (stages.length))
+    );
     
     if(state.stats.health > 0) {
-        $('plant-actor').innerText = stages[stageIndex] || stages[stages.length-1];
+        $('plant-actor').innerText = stages[stageIndex];
         $('plant-actor').style.filter = "none";
     } else {
         $('plant-actor').innerText = "🥀";
@@ -256,35 +256,61 @@ function showHint() {
     renderUI();
 }
 
-function endGame(win) {
+function endGame(survived) {
     state.gameOver = true;
-    sfx(win ? 'win' : 'err');
-    localStorage.removeItem(STORAGE_KEY);
+    
     $('game-screen').classList.remove('active');
     $('result-screen').classList.add('active');
-    $('result-title').innerText = win ? "Level Complete!" : "Game Over";
-    $('result-icon').innerText = win ? "🏆" : "🥀";
-    $('result-sub').innerText = win ? "You are a master gardener." : "Try again to save your plant.";
+    
+    // --- UPDATED END GAME LOGIC ---
+    // If health <= 0, you lost (Game Over)
+    // If survived, we check the score for the message.
+    
+    let title = "";
+    let sub = "";
+    let icon = "";
+    let soundType = "";
+
+    if (!survived) {
+        // Died due to health
+        title = "Plant Wilted 🥀";
+        sub = "Your plant ran out of health.";
+        icon = "🥀";
+        soundType = "err";
+    } else {
+        // Finished questions, check score
+        const percentage = (state.stats.score / state.quiz.length) * 100;
+        soundType = "win";
+
+        if(percentage === 100) {
+            title = "Master Gardener! 🏆";
+            sub = "Perfect score! Your tree is fully grown.";
+            icon = "🌳";
+        } else if (percentage >= 60) {
+            title = "Level Complete";
+            sub = "Good job, but your tree could be taller.";
+            icon = "🌿";
+        } else {
+            title = "Level Finished";
+            sub = "Your plant survived, but it didn't grow much.";
+            icon = "🌱";
+            soundType = "err"; // Sad sound for low score
+        }
+    }
+    
+    sfx(soundType);
+
+    $('result-title').innerText = title;
+    $('result-icon').innerText = icon;
+    $('result-sub').innerText = sub;
     $('end-score').innerText = `${state.stats.score} / ${state.quiz.length}`;
     $('end-streak').innerText = state.stats.streak;
 }
 
-function loadSave() {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if(data) {
-        // Show Resume Button
-        $('resume-btn').classList.remove('hidden');
-        
-        const parsed = JSON.parse(data);
-        state.darkMode = parsed.darkMode; 
-    }
+function quitGame() {
+    location.reload();
 }
 
-function saveGame() {
-    if(!state.gameOver) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function saveAndExit() { saveGame(); location.reload(); }
 function toggleMute() {
     state.sound = !state.sound;
     $('sound-btn').style.opacity = state.sound ? 1 : 0.5;
