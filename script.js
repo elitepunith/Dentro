@@ -1,333 +1,291 @@
-/* 
-   DENTRO 2.0 - Production Core
-   Features: LocalStorage, Audio Engine, Game Loop
-*/
+/* DENTRO LOGIC - FINAL */
 
-// --- CONFIGURATION ---
-const STORAGE_KEY = 'dentro_save_v2';
+const STORAGE_KEY = 'dentro_v4_save';
+let AUDIO = null;
 
-// --- STATE MANAGEMENT ---
-let gameState = {
-    settings: { language: 'javascript', difficulty: 'easy', plantType: 'sakura', plantStages: [] },
-    stats: { streak: 0, maxStreak: 0, health: 100, currentQIndex: 0, score: 0 },
-    quizData: [], 
-    isGameOver: false,
-    soundEnabled: true
+// --- STATE ---
+let state = {
+    config: { lang: 'javascript', diff: 'easy', plant: 'sakura', stages: [] },
+    stats: { streak: 0, health: 100, qIndex: 0, score: 0 },
+    quiz: [], 
+    gameOver: false,
+    sound: true,
+    darkMode: false
 };
 
-// --- AUDIO ENGINE (No external files needed) ---
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// --- AUDIO ---
+function initAudio() {
+    if (!AUDIO) AUDIO = new (window.AudioContext || window.webkitAudioContext)();
+    if (AUDIO.state === 'suspended') AUDIO.resume();
+}
 
-function playSound(type) {
-    if (!gameState.soundEnabled) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+function sfx(type) {
+    if (!state.sound || !AUDIO) return;
+    const t = AUDIO.currentTime;
+    const osc = AUDIO.createOscillator();
+    const gain = AUDIO.createGain();
+    osc.connect(gain); gain.connect(AUDIO.destination);
 
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    const now = audioCtx.currentTime;
-
-    if (type === 'correct') {
-        // Happy high-pitched 'ding'
+    if (type === 'pop') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.exponentialRampToValueAtTime(1000, now + 0.1);
-        gainNode.gain.setValueAtTime(0.1, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-        osc.start(now);
-        osc.stop(now + 0.5);
+        osc.frequency.setValueAtTime(800, t);
+        osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+        gain.gain.setValueAtTime(0.1, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+        osc.start(t); osc.stop(t + 0.15);
     } 
-    else if (type === 'wrong') {
-        // Low dissonant 'buzz'
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.linearRampToValueAtTime(100, now + 0.3);
-        gainNode.gain.setValueAtTime(0.1, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
-    }
     else if (type === 'click') {
-        // Soft UI click
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(300, now);
-        gainNode.gain.setValueAtTime(0.05, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
+        osc.frequency.setValueAtTime(1200, t);
+        gain.gain.setValueAtTime(0.05, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+        osc.start(t); osc.stop(t + 0.03);
+    }
+    else if (type === 'err') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.linearRampToValueAtTime(50, t + 0.2);
+        gain.gain.setValueAtTime(0.2, t);
+        gain.gain.linearRampToValueAtTime(0.01, t + 0.2);
+        osc.start(t); osc.stop(t + 0.2);
     }
     else if (type === 'win') {
-        // Victory Arpeggio
-        playNote(523.25, now);       // C
-        playNote(659.25, now + 0.1); // E
-        playNote(783.99, now + 0.2); // G
-        playNote(1046.50, now + 0.3); // High C
+        const note = (f, d) => {
+            const o = AUDIO.createOscillator(); const g = AUDIO.createGain();
+            o.connect(g); g.connect(AUDIO.destination);
+            o.frequency.value = f;
+            g.gain.setValueAtTime(0.1, t + d);
+            g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.4);
+            o.start(t + d); o.stop(t + d + 0.4);
+        };
+        note(523.25, 0); note(659.25, 0.1); note(783.99, 0.2); note(1046.50, 0.4);
     }
 }
 
-function playNote(freq, time) {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.1, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
-    osc.start(time);
-    osc.stop(time + 0.3);
-}
-
-// --- DOM CACHE ---
-const screens = { welcome: document.getElementById('welcome-screen'), game: document.getElementById('game-screen'), result: document.getElementById('result-screen') };
-const plantEmoji = document.getElementById('main-plant');
-const growthFill = document.getElementById('growth-fill');
-const motivationalText = document.getElementById('motivational-text');
+// --- UTILS ---
+const $ = (id) => document.getElementById(id);
+const shuffle = (arr) => arr.sort(() => Math.random() - 0.5);
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
-    checkSaveFile();
-    setupEvents();
+    loadSave();
+    bindEvents();
+    applyTheme(); 
 });
 
-function setupEvents() {
-    // UI Interactions
-    document.querySelectorAll('button').forEach(b => {
-        b.addEventListener('mousedown', () => playSound('click'));
+function bindEvents() {
+    document.body.addEventListener('click', initAudio, { once: true });
+    
+    // Theme
+    document.querySelectorAll('.theme-toggle').forEach(btn => btn.onclick = toggleTheme);
+
+    // Inputs
+    $('lang-select').onchange = (e) => state.config.lang = e.target.value;
+    
+    document.querySelectorAll('.seg-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.config.diff = btn.dataset.val;
+            sfx('click');
+        };
     });
 
-    // Settings
-    document.getElementById('language-select').addEventListener('change', (e) => gameState.settings.language = e.target.value);
-    
-    const diffBtns = document.querySelectorAll('#difficulty-toggles button');
-    diffBtns.forEach(btn => btn.addEventListener('click', () => {
-        diffBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        gameState.settings.difficulty = btn.dataset.value;
-    }));
+    document.querySelectorAll('.tile-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.tile-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.config.plant = btn.dataset.type;
+            state.config.stages = JSON.parse(btn.dataset.stages);
+            sfx('click');
+        };
+    });
 
-    const plantBtns = document.querySelectorAll('.plant-btn');
-    plantBtns.forEach(btn => btn.addEventListener('click', () => {
-        plantBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        gameState.settings.plantType = btn.dataset.type;
-        gameState.settings.plantStages = JSON.parse(btn.dataset.stages);
-    }));
-
-    // Actions
-    document.getElementById('start-btn').addEventListener('click', () => startGame(false));
-    document.getElementById('continue-btn').addEventListener('click', () => startGame(true));
-    document.getElementById('next-btn').addEventListener('click', nextQuestion);
-    document.getElementById('hint-btn').addEventListener('click', showHint);
-    document.getElementById('quit-btn').addEventListener('click', saveAndQuit);
-    document.getElementById('sound-btn').addEventListener('click', toggleSound);
-    document.getElementById('restart-btn').addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); location.reload(); });
-    document.getElementById('clear-save-btn').addEventListener('click', () => { localStorage.removeItem(STORAGE_KEY); location.reload(); });
+    // Buttons
+    $('start-btn').onclick = () => initGame(false);
+    $('resume-btn').onclick = () => initGame(true);
+    $('next-btn').onclick = nextLevel;
+    $('hint-btn').onclick = showHint;
+    $('quit-btn').onclick = saveAndExit;
+    $('sound-btn').onclick = toggleMute;
+    $('restart-btn').onclick = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };
+    $('clear-btn').onclick = () => { localStorage.removeItem(STORAGE_KEY); location.reload(); };
 }
 
-// --- SAVE SYSTEM ---
-function checkSaveFile() {
+// --- THEME ---
+function toggleTheme() {
+    state.darkMode = !state.darkMode;
+    applyTheme();
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        document.getElementById('continue-area').classList.remove('hidden');
+    if(saved) {
         const parsed = JSON.parse(saved);
-        // Update the "Continue" button text with details
-        document.getElementById('save-info').textContent = 
-            `Streak: ${parsed.stats.streak} • ${parsed.settings.language.toUpperCase()}`;
+        parsed.darkMode = state.darkMode;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
 }
 
-function saveGame() {
-    if(!gameState.isGameOver) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+function applyTheme() {
+    if(state.darkMode) {
+        document.body.classList.add('dark-mode');
+        document.querySelectorAll('.theme-toggle').forEach(b => b.innerText = '☀️');
+    } else {
+        document.body.classList.remove('dark-mode');
+        document.querySelectorAll('.theme-toggle').forEach(b => b.innerText = '🌙');
     }
-}
-
-function saveAndQuit() {
-    saveGame();
-    alert("Game Saved! See you soon.");
-    location.reload();
 }
 
 // --- GAME LOGIC ---
+function initGame(isResume) {
+    initAudio(); 
+    sfx('click');
 
-function startGame(isLoad) {
-    if (isLoad) {
-        // Load Data
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        gameState = saved;
+    if(isResume) {
+        state = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        applyTheme();
     } else {
-        // New Game: Fetch Data
-        const rawQ = getQuestions(gameState.settings.language, gameState.settings.difficulty);
-        // Create a large pool of questions (approx 50 by duplication for demo purposes, or fetch API)
-        let pool = [];
-        for(let i=0; i<5; i++) pool = pool.concat(rawQ); // Multiply logic to simulate size
-        gameState.quizData = pool.sort(() => Math.random() - 0.5); // Shuffle
-        
-        // Reset Stats
-        gameState.stats.streak = 0;
-        gameState.stats.health = 100;
-        gameState.stats.currentQIndex = 0;
-        gameState.stats.score = 0;
-        gameState.isGameOver = false;
+        const raw = getQuestions(state.config.lang, state.config.diff);
+        state.quiz = shuffle([...raw]); 
+        const activePlant = document.querySelector('.tile-btn.active');
+        state.config.stages = JSON.parse(activePlant.dataset.stages);
+        const currentTheme = state.darkMode;
+        state.stats = { streak: 0, health: 100, qIndex: 0, score: 0 };
+        state.darkMode = currentTheme;
     }
 
-    // Update UI Headers
-    document.getElementById('lang-badge').textContent = gameState.settings.language.toUpperCase();
-    document.getElementById('diff-badge').textContent = gameState.settings.difficulty.toUpperCase();
-
-    updatePlantVisuals();
-    updateStatsUI();
-
-    screens.welcome.classList.remove('active');
-    screens.game.classList.add('active');
-
+    $('badge-lang').innerText = state.config.lang.toUpperCase();
+    $('badge-diff').innerText = state.config.diff.toUpperCase();
+    
+    renderUI();
+    $('welcome-screen').classList.remove('active');
+    $('game-screen').classList.add('active');
     renderQuestion();
 }
 
 function renderQuestion() {
-    const currentQ = gameState.quizData[gameState.stats.currentQIndex];
-    const totalQ = gameState.quizData.length;
+    const q = state.quiz[state.stats.qIndex];
+    const total = state.quiz.length;
 
-    document.getElementById('q-number').textContent = `Question ${gameState.stats.currentQIndex + 1}`;
-    document.getElementById('q-remaining').textContent = `Total: ${totalQ}`;
-    document.getElementById('question-text').textContent = currentQ.q;
+    $('q-num').innerText = `Q${state.stats.qIndex + 1}`;
+    $('q-total').innerText = `/ ${total}`;
+    $('q-text').innerHTML = q.q;
 
-    const optionsContainer = document.getElementById('options-container');
-    optionsContainer.innerHTML = '';
-    
-    document.getElementById('feedback-area').classList.add('hidden');
-    document.getElementById('next-btn').classList.add('hidden');
-    document.getElementById('hint-btn').classList.remove('hidden');
+    $('options-list').innerHTML = '';
+    $('feedback-box').classList.add('hidden');
+    $('next-btn').classList.add('hidden');
+    $('hint-btn').classList.remove('hidden');
 
-    currentQ.options.forEach((opt, index) => {
+    let optionsMap = q.opts.map(opt => ({ txt: opt, isCorrect: opt === q.a }));
+    optionsMap = shuffle(optionsMap);
+
+    optionsMap.forEach((opt, idx) => {
         const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        btn.textContent = opt;
-        btn.onclick = () => handleAnswer(index, btn);
-        optionsContainer.appendChild(btn);
+        btn.className = 'opt-btn';
+        btn.innerHTML = opt.txt;
+        btn.onclick = () => checkAnswer(btn, opt.isCorrect, q);
+        $('options-list').appendChild(btn);
     });
 }
 
-function handleAnswer(selectedIndex, btnElement) {
-    if (gameState.isGameOver) return;
-    const currentQ = gameState.quizData[gameState.stats.currentQIndex];
-    const isCorrect = selectedIndex === currentQ.correct;
-    
-    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+function checkAnswer(btn, isCorrect, q) {
+    if(state.gameOver) return;
+    document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
 
-    if (isCorrect) {
-        playSound('correct');
-        btnElement.classList.add('correct');
-        gameState.stats.streak++;
-        gameState.stats.score++;
-        if(gameState.stats.streak > gameState.stats.maxStreak) gameState.stats.maxStreak = gameState.stats.streak;
-        
-        showFeedback(true, currentQ.explanation);
-        motivationalText.textContent = "Photosynthesis! ☀️";
-        plantEmoji.classList.add('pop');
-        setTimeout(() => plantEmoji.classList.remove('pop'), 300);
+    if(isCorrect) {
+        sfx('pop');
+        btn.classList.add('correct');
+        state.stats.streak++;
+        state.stats.score++;
+        $('fb-icon').innerText = "✅";
+        $('fb-title').innerText = "Correct!";
+        $('fb-title').style.color = "var(--primary-dark)";
+        $('plant-actor').classList.add('bounce');
+        setTimeout(() => $('plant-actor').classList.remove('bounce'), 400);
     } else {
-        playSound('wrong');
-        btnElement.classList.add('wrong');
-        const allBtns = document.querySelectorAll('.option-btn');
-        allBtns[currentQ.correct].classList.add('correct'); // Show right answer
-
-        gameState.stats.streak = 0;
-        gameState.stats.health -= 20;
-        
-        showFeedback(false, currentQ.explanation);
-        motivationalText.textContent = "It's getting dark... 🌧️";
-        plantEmoji.classList.add('wilt');
+        sfx('err');
+        btn.classList.add('wrong');
+        Array.from(document.querySelectorAll('.opt-btn')).find(b => b.innerText.includes(q.a)).classList.add('correct');
+        state.stats.streak = 0;
+        state.stats.health -= 20;
+        $('fb-icon').innerText = "⚠️";
+        $('fb-title').innerText = "Incorrect";
+        $('fb-title').style.color = "var(--danger)";
+        $('plant-actor').classList.add('wilt');
     }
 
-    updateStatsUI();
-    updatePlantVisuals();
-    saveGame(); // Auto-save after every answer
+    $('fb-desc').innerHTML = q.e; 
+    $('feedback-box').classList.remove('hidden');
+    renderUI();
+    saveGame();
 
-    if (gameState.stats.health <= 0) {
-        setTimeout(() => endGame(false), 1500);
-    } else {
-        document.getElementById('next-btn').classList.remove('hidden');
-        document.getElementById('hint-btn').classList.add('hidden');
-    }
+    if(state.stats.health <= 0) setTimeout(() => endGame(false), 1500);
+    else $('next-btn').classList.remove('hidden');
 }
 
-function showFeedback(isSuccess, text) {
-    const fb = document.getElementById('feedback-area');
-    const msg = document.getElementById('feedback-msg');
-    const detail = document.getElementById('feedback-detail');
-
-    fb.classList.remove('hidden');
-    msg.textContent = isSuccess ? "✅ Correct!" : "❌ Incorrect";
-    msg.style.color = isSuccess ? "var(--primary-dark)" : "var(--danger)";
-    detail.textContent = text;
-}
-
-function nextQuestion() {
-    gameState.stats.currentQIndex++;
-    if (gameState.stats.currentQIndex >= gameState.quizData.length) {
-        endGame(true);
-    } else {
-        plantEmoji.classList.remove('wilt'); // Reset visuals
+function nextLevel() {
+    state.stats.qIndex++;
+    if(state.stats.qIndex >= state.quiz.length) endGame(true);
+    else {
+        $('plant-actor').classList.remove('wilt'); 
+        sfx('click');
         renderQuestion();
-        saveGame();
+        renderUI();
+    }
+}
+
+function renderUI() {
+    $('disp-streak').innerText = state.stats.streak;
+    $('disp-health').innerText = state.stats.health + '%';
+    const progress = (state.stats.qIndex / state.quiz.length) * 100;
+    $('progress-bar').style.width = `${progress}%`;
+    const stages = state.config.stages;
+    const stageIndex = Math.floor((progress/100) * (stages.length-1));
+    
+    if(state.stats.health > 0) {
+        $('plant-actor').innerText = stages[stageIndex] || stages[stages.length-1];
+        $('plant-actor').style.filter = "none";
+    } else {
+        $('plant-actor').innerText = "🥀";
+        $('plant-actor').style.filter = "grayscale(1)";
     }
 }
 
 function showHint() {
-    const currentQ = gameState.quizData[gameState.stats.currentQIndex];
-    alert(`💡 Hint: ${currentQ.hint}`);
-    gameState.stats.streak = 0; // Penalty
-    updateStatsUI();
+    const q = state.quiz[state.stats.qIndex];
+    alert(`Hint: ${q.h}`);
+    state.stats.streak = 0;
+    renderUI();
 }
 
-function updateStatsUI() {
-    document.getElementById('score-streak').textContent = gameState.stats.streak;
-    document.getElementById('score-health').textContent = gameState.stats.health + '%';
-    const healthEl = document.getElementById('score-health');
-    healthEl.style.color = gameState.stats.health > 50 ? 'var(--text-dark)' : 'var(--danger)';
+function endGame(win) {
+    state.gameOver = true;
+    sfx(win ? 'win' : 'err');
+    localStorage.removeItem(STORAGE_KEY);
+    $('game-screen').classList.remove('active');
+    $('result-screen').classList.add('active');
+    $('result-title').innerText = win ? "Level Complete!" : "Game Over";
+    $('result-icon').innerText = win ? "🏆" : "🥀";
+    $('result-sub').innerText = win ? "You are a master gardener." : "Try again to save your plant.";
+    $('end-score').innerText = `${state.stats.score} / ${state.quiz.length}`;
+    $('end-streak').innerText = state.stats.streak;
 }
 
-function updatePlantVisuals() {
-    const totalQs = 50; // Or dynamic length
-    const current = gameState.stats.currentQIndex;
-    const stages = gameState.settings.plantStages;
-    
-    // Calculate stage based on percentage completed
-    const percent = Math.min(100, (current / totalQs) * 100);
-    growthFill.style.width = `${percent}%`;
-
-    const stageIndex = Math.floor((percent / 100) * (stages.length - 1));
-    
-    if (gameState.stats.health > 0) {
-        plantEmoji.textContent = stages[stageIndex] || stages[stages.length-1];
-        plantEmoji.style.filter = "grayscale(0)";
-    } else {
-        plantEmoji.textContent = "🥀";
-        plantEmoji.style.filter = "grayscale(1)";
+function loadSave() {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if(data) {
+        // Show Resume Button
+        $('resume-btn').classList.remove('hidden');
+        
+        const parsed = JSON.parse(data);
+        state.darkMode = parsed.darkMode; 
     }
 }
 
-function endGame(isWin) {
-    gameState.isGameOver = true;
-    if(isWin) playSound('win');
-    else playSound('wrong');
-
-    localStorage.removeItem(STORAGE_KEY); // Clear save on finish
-    
-    screens.game.classList.remove('active');
-    screens.result.classList.add('active');
-
-    document.getElementById('result-title').textContent = isWin ? "Garden Bloomed! 🎉" : "Wilted Away 🥀";
-    document.getElementById('final-correct').textContent = gameState.stats.score;
-    document.getElementById('final-streak').textContent = gameState.stats.maxStreak;
-    document.getElementById('result-plant').textContent = isWin ? gameState.settings.plantStages[5] : "🥀";
+function saveGame() {
+    if(!state.gameOver) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function toggleSound() {
-    gameState.soundEnabled = !gameState.soundEnabled;
-    document.getElementById('sound-btn').style.opacity = gameState.soundEnabled ? "1" : "0.5";
+function saveAndExit() { saveGame(); location.reload(); }
+function toggleMute() {
+    state.sound = !state.sound;
+    $('sound-btn').style.opacity = state.sound ? 1 : 0.5;
 }

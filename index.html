@@ -2,161 +2,178 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dentro 2.0 | Master Code</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dentro | Master Code</title>
+    <!-- Inter Font for professional UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
 </head>
 <body>
 
-    <!-- Animated Background -->
-    <div class="ambient-bg"></div>
+    <div class="background-mesh"></div>
 
-    <div class="app-container">
+    <div class="app-wrapper">
         
-        <!-- === SCREEN 1: WELCOME (Redesigned) === -->
-        <section id="welcome-screen" class="screen active glass-panel">
-            <div class="welcome-header">
-                <div class="logo-wrapper">
-                    <span class="logo-emoji floating">🌱</span>
+        <!-- === SCREEN 1: WELCOME === -->
+        <section id="welcome-screen" class="screen active">
+            <div class="card login-card">
+                
+                <!-- TOP CONTROLS -->
+                <div class="card-controls">
+                    <!-- Resume Pill (Hidden by default) -->
+                    <button id="resume-btn" class="pill-badge hidden" title="Resume previous game">
+                        <span>▶ Resume</span>
+                    </button>
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" title="Toggle Dark Mode">🌙</button>
                 </div>
-                <h1>Dentro</h1>
-                <p class="tagline">Grow your knowledge. One line at a time.</p>
-            </div>
 
-            <!-- This appears if a save file exists -->
-            <div id="continue-area" class="hidden">
-                <button id="continue-btn" class="main-btn pulse-anim">
-                    Resume Journey 🚀
-                    <span id="save-info" class="btn-subtext">Level 5 • Sakura</span>
-                </button>
-                <div class="divider"><span>OR</span></div>
-            </div>
+                <div class="card-header">
+                    <div class="icon-box">🌱</div>
+                    <h1>Dentro</h1>
+                    <p>Grow knowledge as a tree</p>
+                </div>
 
-            <div class="settings-wrapper">
-                <div class="setting-row">
+                <!-- Settings Form -->
+                <div class="form-group">
                     <label>Language</label>
-                    <div class="custom-select">
-                        <select id="language-select">
+                    <div class="select-wrapper">
+                        <select id="lang-select">
                             <option value="javascript">JavaScript</option>
                             <option value="python">Python</option>
                             <option value="css">CSS</option>
                             <option value="java">Java</option>
                         </select>
+                        <span class="select-arrow">▼</span>
                     </div>
                 </div>
 
-                <div class="setting-row">
+                <div class="form-group">
                     <label>Difficulty</label>
-                    <div class="pill-toggles" id="difficulty-toggles">
-                        <button class="pill-btn active" data-value="easy">Easy</button>
-                        <button class="pill-btn" data-value="medium">Med</button>
-                        <button class="pill-btn" data-value="hard">Hard</button>
+                    <div class="segmented-control" id="diff-toggles">
+                        <button class="seg-btn active" data-val="easy">Easy</button>
+                        <button class="seg-btn" data-val="medium">Med</button>
+                        <button class="seg-btn" data-val="hard">Hard</button>
                     </div>
                 </div>
 
-                <div class="plant-selector">
-                    <label>Choose Companion</label>
-                    <div class="plant-grid" id="plant-toggles">
-                        <button class="plant-btn active" data-type="sakura" data-stages='["🫘","🌱","🌿","🪴","🌷","🌸"]'>🌸</button>
-                        <button class="plant-btn" data-type="cactus" data-stages='["🫘","🌱","🌵","🌵","🌵","🏜️"]'>🌵</button>
-                        <button class="plant-btn" data-type="tree" data-stages='["🫘","🌱","🌿","🌲","🌲","🎄"]'>🌲</button>
-                        <button class="plant-btn" data-type="sunflower" data-stages='["🫘","🌱","🌿","🪴","🌼","🌻"]'>🌻</button>
+                <div class="form-group">
+                    <label>Companion</label>
+                    <div class="grid-4" id="plant-toggles">
+                        <button class="tile-btn active" data-type="sakura" data-stages='["🫘","🌱","🌿","🪴","🌷","🌸"]'>🌸</button>
+                        <button class="tile-btn" data-type="cactus" data-stages='["🫘","🌱","🌵","🌵","🌵","🏜️"]'>🌵</button>
+                        <button class="tile-btn" data-type="pine" data-stages='["🫘","🌱","🌿","🌲","🌲","🎄"]'>🌲</button>
+                        <button class="tile-btn" data-type="sunflower" data-stages='["🫘","🌱","🌿","🪴","🌼","🌻"]'>🌻</button>
                     </div>
                 </div>
 
-                <button id="start-btn" class="main-btn">Start New Game 🌱</button>
+                <button id="start-btn" class="btn btn-black btn-full">Start New Game</button>
+                
+                <footer class="login-footer"></footer>
             </div>
-            
-            <footer class="app-footer">
-                v2.0 • Auto-saving enabled
-            </footer>
         </section>
 
         <!-- === SCREEN 2: GAME === -->
         <section id="game-screen" class="screen">
-            <header class="game-header glass-header">
-                <button id="quit-btn" class="icon-btn" title="Save & Quit">💾</button>
-                <div class="header-badges">
-                    <span class="badge" id="lang-badge">JS</span>
-                    <span class="badge" id="diff-badge">Easy</span>
+            <header class="top-nav">
+                <button id="quit-btn" class="nav-btn" title="Save & Quit">✕</button>
+                <div class="badges">
+                    <span id="badge-lang" class="badge">JS</span>
+                    <span id="badge-diff" class="badge">Easy</span>
                 </div>
-                <button id="sound-btn" class="icon-btn active" title="Toggle Sound">🔊</button>
+                <div class="right-nav">
+                    <button class="theme-toggle nav-btn" title="Toggle Dark Mode">🌙</button>
+                    <button id="sound-btn" class="nav-btn active">🔊</button>
+                </div>
             </header>
 
-            <main class="game-layout">
-                <!-- Garden -->
-                <div class="garden-panel glass-panel">
-                    <div class="live-stats">
-                        <div class="stat"><span>🔥 Streak</span> <b id="score-streak">0</b></div>
-                        <div class="stat"><span>❤️ Health</span> <b id="score-health">100%</b></div>
-                    </div>
-
-                    <div class="garden-display">
-                        <div class="plant-container">
-                            <div id="main-plant" class="plant-emoji">🫘</div>
-                            <div class="shadow"></div>
-                            <!-- Particles will be injected here via JS -->
+            <div class="game-grid">
+                <!-- Left: Garden Visualization -->
+                <div class="garden-card">
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="label">Streak</span>
+                            <span class="value" id="disp-streak">0</span>
+                        </div>
+                        <div class="stat-item right">
+                            <span class="label">Health</span>
+                            <span class="value" id="disp-health">100%</span>
                         </div>
                     </div>
 
-                    <div class="progress-wrapper">
-                        <div class="progress-bar">
-                            <div id="growth-fill" style="width: 0%"></div>
+                    <div class="viewport">
+                        <div id="plant-actor" class="emoji-plant">🫘</div>
+                        <div class="ground-line"></div>
+                    </div>
+
+                    <div class="progress-area">
+                        <div class="progress-track">
+                            <div id="progress-bar" style="width: 0%"></div>
                         </div>
-                        <p id="motivational-text">Let's grow!</p>
+                        <p id="msg-text">Ready to grow?</p>
                     </div>
                 </div>
 
-                <!-- Quiz -->
-                <div class="quiz-panel glass-panel">
-                    <div class="question-meta">
-                        <span id="q-number">Question 1</span>
-                        <span id="q-remaining">Total: 50</span>
+                <!-- Right: Interaction -->
+                <div class="quiz-card">
+                    <div class="quiz-header">
+                        <span id="q-num">Q1</span>
+                        <span id="q-total">/ 10</span>
                     </div>
 
-                    <div class="question-scroll-area">
-                        <p id="question-text">Loading...</p>
-                        <div id="options-container"></div>
+                    <div class="question-body">
+                        <h2 id="q-text">Loading question...</h2>
+                        <div id="options-list" class="options-stack">
+                            <!-- Buttons injected here -->
+                        </div>
                     </div>
 
-                    <div id="feedback-area" class="feedback hidden">
-                        <p id="feedback-msg"></p>
-                        <p id="feedback-detail"></p>
+                    <div id="feedback-box" class="feedback hidden">
+                        <div class="fb-icon" id="fb-icon">✅</div>
+                        <div class="fb-content">
+                            <h4 id="fb-title">Correct!</h4>
+                            <p id="fb-desc">Explanation text here.</p>
+                        </div>
                     </div>
 
-                    <div class="action-bar">
-                        <button id="hint-btn" class="secondary-btn">💡 Hint</button>
-                        <button id="next-btn" class="main-btn hidden">Next Question →</button>
+                    <div class="quiz-footer">
+                        <button id="hint-btn" class="btn btn-ghost">💡 Hint</button>
+                        <button id="next-btn" class="btn btn-primary hidden">Next</button>
                     </div>
                 </div>
-            </main>
+            </div>
         </section>
 
         <!-- === SCREEN 3: RESULTS === -->
-        <section id="result-screen" class="screen glass-panel">
-            <div class="result-content text-center">
-                <h2 id="result-title">Game Over</h2>
-                <div id="result-plant" class="giant-plant">🥀</div>
-                
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <label>Correct</label>
-                        <span id="final-correct">0</span>
+        <section id="result-screen" class="screen">
+            <div class="card result-card">
+                <div id="result-icon" class="result-emoji">🏆</div>
+                <h2 id="result-title">Level Complete!</h2>
+                <p id="result-sub">You grew a magnificent plant.</p>
+
+                <div class="score-board">
+                    <div class="score-item">
+                        <span class="lbl">Score</span>
+                        <span class="val" id="end-score">8/10</span>
                     </div>
-                    <div class="stat-box">
-                        <label>Streak</label>
-                        <span id="final-streak">0</span>
+                    <div class="score-item">
+                        <span class="lbl">Streak</span>
+                        <span class="val" id="end-streak">5</span>
                     </div>
                 </div>
-                
-                <button id="restart-btn" class="main-btn">New Game 🔄</button>
-                <button id="clear-save-btn" class="text-btn">Clear Save Data</button>
+
+                <div class="action-stack">
+                    <button id="restart-btn" class="btn btn-primary btn-full">Play Again</button>
+                    <button id="clear-btn" class="btn btn-ghost btn-full">Clear Save Data</button>
+                </div>
             </div>
         </section>
 
     </div>
 
+    <!-- Logic Scripts -->
     <script src="questions.js"></script>
     <script src="script.js"></script>
 </body>
