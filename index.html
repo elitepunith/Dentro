@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dentro | Grow Your Code Skills</title>
+    <!-- Using Nunito for that friendly, gamified look -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- === SCREEN 1: WELCOME === -->
+        <section id="welcome-screen" class="screen active">
+            <div class="content-box">
+                <div class="logo-area">
+                    <span class="logo-emoji">🌱</span>
+                    <h1>Dentro</h1>
+                    <p class="tagline">Answer questions. Grow plants. Master code.</p>
+                </div>
+
+                <div class="settings-card">
+                    <div class="setting-group">
+                        <label>💻 Language</label>
+                        <select id="language-select">
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="css">CSS</option>
+                            <option value="java">Java</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>📊 Difficulty</label>
+                        <div class="toggle-buttons" id="difficulty-toggles">
+                            <button class="toggle-btn active" data-value="easy">Easy</button>
+                            <button class="toggle-btn" data-value="medium">Medium</button>
+                            <button class="toggle-btn" data-value="hard">Hard</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>🪴 Choose Your Plant</label>
+                        <div class="plant-grid" id="plant-toggles">
+                            <!-- Data attributes hold the emoji stages for growth -->
+                            <button class="plant-btn active" data-type="sakura" data-stages='["🫘","🌱","🌿","🪴","🌷","🌸"]'>🌸</button>
+                            <button class="plant-btn" data-type="cactus" data-stages='["🫘","🌱","🌵","🌵","🌵","🏜️"]'>🌵</button>
+                            <button class="plant-btn" data-type="tree" data-stages='["🫘","🌱","🌿","🌲","🌲","🎄"]'>🌲</button>
+                            <button class="plant-btn" data-type="sunflower" data-stages='["🫘","🌱","🌿","🪴","🌼","🌻"]'>🌻</button>
+                        </div>
+                    </div>
+
+                    <button id="start-btn" class="main-btn">Start Growing 🌱</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- === SCREEN 2: GAME === -->
+        <section id="game-screen" class="screen">
+            <header class="game-header">
+                <button id="quit-btn" class="icon-btn">🏠</button>
+                <div class="header-stats">
+                    <span class="badge" id="lang-badge">JS</span>
+                    <span class="badge" id="diff-badge">Easy</span>
+                </div>
+                <!-- Placeholder for sound toggle upgrade -->
+                <button class="icon-btn" style="opacity:0.5; cursor: default;">🔊</button>
+            </header>
+
+            <main class="game-layout">
+                <!-- Left: The Garden -->
+                <div class="garden-panel">
+                    <div class="live-stats">
+                        <div class="stat"><span>🔥 Streak</span> <b id="score-streak">0</b></div>
+                        <div class="stat"><span>❤️ Health</span> <b id="score-health">100%</b></div>
+                    </div>
+
+                    <div class="garden-display">
+                        <div class="sky">
+                            <div class="sun"></div>
+                            <div class="cloud c1"></div>
+                            <div class="cloud c2"></div>
+                        </div>
+                        
+                        <div class="plant-container">
+                            <div id="main-plant" class="plant-emoji">🫘</div>
+                            <div class="shadow"></div>
+                        </div>
+
+                        <div class="ground"></div>
+                    </div>
+
+                    <div class="progress-wrapper">
+                        <div class="progress-bar">
+                            <div id="growth-fill" style="width: 0%"></div>
+                        </div>
+                        <p id="motivational-text">Let's get started!</p>
+                    </div>
+                </div>
+
+                <!-- Right: The Quiz -->
+                <div class="quiz-panel">
+                    <div class="question-meta">
+                        <span id="q-number">Question 1</span>
+                        <span id="q-remaining">9 left</span>
+                    </div>
+
+                    <div class="question-card">
+                        <p id="question-text">Loading...</p>
+                        <div id="options-container"></div>
+                    </div>
+
+                    <div id="feedback-area" class="feedback hidden">
+                        <p id="feedback-msg"></p>
+                        <p id="feedback-detail"></p>
+                    </div>
+
+                    <div class="action-bar">
+                        <button id="hint-btn" class="secondary-btn">💡 Hint</button>
+                        <button id="next-btn" class="main-btn hidden">Next →</button>
+                    </div>
+                </div>
+            </main>
+        </section>
+
+        <!-- === SCREEN 3: RESULTS (Win/Lose) === -->
+        <section id="result-screen" class="screen">
+            <div class="content-box text-center">
+                <h2 id="result-title">Game Over</h2>
+                <div id="result-plant" class="giant-plant">🥀</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <label>Correct</label>
+                        <span id="final-correct">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <label>Best Streak</label>
+                        <span id="final-streak">0</span>
+                    </div>
+                </div>
+
+                <p id="result-msg">Better luck next time!</p>
+                
+                <button id="restart-btn" class="main-btn">Play Again 🔄</button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Load Data first, then Logic -->
+    <script src="questions.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
